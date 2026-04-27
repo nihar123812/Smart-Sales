@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Sales Predictor | AI-Powered Grocery Revenue Forecasting</title>
+    <meta name="description" content="Predict supermarket grocery sales revenue using advanced AI models combining ANN and Random Forest regression.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6c63ff;
+            --primary-light: #8b85ff;
+            --secondary: #00d2ff;
+            --accent: #ff6584;
+            --bg-dark: #0a0a1a;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.65);
+            --gradient: linear-gradient(135deg, #6c63ff 0%, #00d2ff 100%);
+            --success: #00e676;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(108, 99, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 210, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 101, 132, 0.05) 0%, transparent 60%);
+            animation: bgPulse 8s ease-in-out infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes bgPulse {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: var(--secondary);
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-badge::before {
+            content: '●';
+            color: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Form Card */
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.05) inset;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-header-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .form-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .form-header p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .input-hint {
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.35);
+            margin-top: 0.25rem;
+        }
+
+        /* Submit button */
+        .btn-predict {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: var(--gradient);
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.02em;
+        }
+
+        .btn-predict::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-predict:hover::before {
+            left: 100%;
+        }
+
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(108, 99, 255, 0.4);
+        }
+
+        .btn-predict:active {
+            transform: translateY(0);
+        }
+
+        /* Result card */
+        .result-card {
+            margin-top: 2rem;
+            background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(0,210,255,0.08));
+            border: 1px solid rgba(108, 99, 255, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            animation: slideUp 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-icon {
+            font-size: 1.5rem;
+        }
+
+        .result-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary-light);
+        }
+
+        .result-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .result-main {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255,255,255,0.04);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-value {
+            font-size: 3rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .result-currency {
+            font-size: 1.5rem;
+            vertical-align: super;
+        }
+
+        .result-range {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .range-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .range-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+        }
+
+        .range-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .range-box:last-child .range-value {
+            color: var(--accent);
+        }
+
+        /* Model info badges */
+        .model-badges {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .model-badge {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border);
+            margin-top: 3rem;
+        }
+
+        footer span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: 1;
+            }
+
+            .stats-bar {
+                gap: 1.5rem;
+            }
+        }
+
+        /* Loading state */
+        .btn-predict.loading {
+            pointer-events: none;
+            opacity: 0.85;
+        }
+
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating particles -->
+    <div class="particle" style="width:4px;height:4px;left:10%;background:#6c63ff;animation-duration:15s;animation-delay:0s;"></div>
+    <div class="particle" style="width:6px;height:6px;left:25%;background:#00d2ff;animation-duration:20s;animation-delay:3s;"></div>
+    <div class="particle" style="width:3px;height:3px;left:50%;background:#ff6584;animation-duration:18s;animation-delay:6s;"></div>
+    <div class="particle" style="width:5px;height:5px;left:75%;background:#6c63ff;animation-duration:22s;animation-delay:2s;"></div>
+    <div class="particle" style="width:4px;height:4px;left:90%;background:#00d2ff;animation-duration:16s;animation-delay:8s;"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo-badge">AI-Powered Prediction</div>
+            <h1>Smart Sales<br>Predictor</h1>
+            <p class="subtitle">Forecast supermarket grocery revenue using our ensemble AI model combining ANN + Random Forest regression.</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value">2 Models</div>
+                <div class="stat-label">Ensemble AI</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">24 Cities</div>
+                <div class="stat-label">Tamil Nadu</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">7 Categories</div>
+                <div class="stat-label">Product Types</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">4 Years</div>
+                <div class="stat-label">Training Data</div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="form-header">
+                <div class="form-header-icon">🎯</div>
+                <div>
+                    <h2>Sales Prediction Input</h2>
+                    <p>Fill in the transaction details below</p>
+                </div>
+            </div>
+
+            <form action="/predict" method="POST" id="predictForm">
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="discount">Discount (%)</label>
+                        <input type="number" id="discount" name="discount" placeholder="e.g. 20" min="0" max="100" step="1" required>
+                        <span class="input-hint">Enter discount percentage (0–100)</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profit">Profit (₹)</label>
+                        <input type="number" id="profit" name="profit" placeholder="e.g. 150.50" step="0.01" required>
+                        <span class="input-hint">Profit earned on the transaction</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">Year</label>
+                        <select id="year" name="year" required>
+                            <option value="" disabled selected>Select year</option>
+                            <option value="2015">2015</option>
+                            <option value="2016">2016</option>
+                            <option value="2017">2017</option>
+                            <option value="2018">2018</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="month">Month</label>
+                        <select id="month" name="month" required>
+                            <option value="" disabled selected>Select month</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="region">Region</label>
+                        <select id="region" name="region" required>
+                            <option value="" disabled selected>Select region</option>
+                            <option value="West">West</option>
+                            <option value="East">East</option>
+                            <option value="Central">Central</option>
+                            <option value="South">South</option>
+                            <option value="North">North</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="city">City</label>
+                        <select id="city" name="city" required>
+                            <option value="" disabled selected>Select city</option>
+                            <option>Kanyakumari</option><option>Tirunelveli</option><option>Bodi</option>
+                            <option>Krishnagiri</option><option>Vellore</option><option>Perambalur</option>
+                            <option>Tenkasi</option><option>Chennai</option><option>Salem</option>
+                            <option>Karur</option><option>Pudukottai</option><option>Coimbatore</option>
+                            <option>Ramanadhapuram</option><option>Cumbum</option><option>Virudhunagar</option>
+                            <option>Madurai</option><option>Ooty</option><option>Namakkal</option>
+                            <option>Viluppuram</option><option>Dindigul</option><option>Theni</option>
+                            <option>Dharmapuri</option><option>Nagercoil</option><option>Trichy</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select id="category" name="category" required>
+                            <option value="" disabled selected>Select category</option>
+                            <option>Snacks</option>
+                            <option>Eggs, Meat &amp; Fish</option>
+                            <option>Fruits &amp; Veggies</option>
+                            <option>Bakery</option>
+                            <option>Beverages</option>
+                            <option>Food Grains</option>
+                            <option>Oil &amp; Masala</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subcategory">Sub-Category</label>
+                        <select id="subcategory" name="subcategory" required>
+                            <option value="" disabled selected>Select sub-category</option>
+                            <option>Health Drinks</option><option>Soft Drinks</option><option>Cookies</option>
+                            <option>Breads &amp; Buns</option><option>Chocolates</option><option>Noodles</option>
+                            <option>Masalas</option><option>Biscuits</option><option>Cakes</option>
+                            <option>Edible Oil &amp; Ghee</option><option>Spices</option><option>Mutton</option>
+                            <option>Eggs</option><option>Organic Staples</option><option>Fresh Fruits</option>
+                            <option>Fish</option><option>Fresh Vegetables</option><option>Atta &amp; Flour</option>
+                            <option>Organic Fruits</option><option>Chicken</option><option>Organic Vegetables</option>
+                            <option>Dals &amp; Pulses</option><option>Rice</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn-predict" id="submitBtn">
+                    ⚡ Predict Sales Revenue
+                </button>
+            </form>
+
+            {% if not status %}
+            <div class="result-card" id="resultCard">
+                <div class="result-header">
+                    <span class="result-icon">📊</span>
+                    <div>
+                        <div class="result-title">Prediction Complete</div>
+                        <div class="result-subtitle">Ensemble model (ANN + Random Forest)</div>
+                    </div>
+                </div>
+
+                <div class="result-main">
+                    <div class="result-label">Predicted Sales Revenue</div>
+                    <div class="result-value">
+                        <span class="result-currency">₹</span>{{ ans }}
+                    </div>
+                </div>
+
+                <div class="result-range">
+                    <div class="range-box">
+                        <div class="range-label">🔽 Lower Bound</div>
+                        <div class="range-value">₹{{ up }}</div>
+                    </div>
+                    <div class="range-box">
+                        <div class="range-label">🔼 Upper Bound</div>
+                        <div class="range-value">₹{{ down }}</div>
+                    </div>
+                </div>
+
+                <div class="model-badges">
+                    <span class="model-badge">🤖 ANN Model</span>
+                    <span class="model-badge">🌲 Random Forest</span>
+                    <span class="model-badge">⚖️ Ensemble Average</span>
+                    <span class="model-badge">±₹387.93 CI</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <footer>
+            <p>Built with <span>TensorFlow · Scikit-Learn · Flask</span> &nbsp;|&nbsp; Smart Sales Predictor © 2024</p>
+            <p style="margin-top:0.5rem;">Trained on Supermart Grocery Sales Retail Analytics Dataset — Tamil Nadu, India</p>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('predictForm').addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            btn.textContent = '⏳ Predicting...';
+            btn.classList.add('loading');
+        });
+
+        // Smooth scroll to result on load
+        {% if not status %}
+        setTimeout(() => {
+            document.getElementById('resultCard')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+        {% endif %}
+    </script>
+</body>
+</html>
